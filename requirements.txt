@@ -1,0 +1,2 @@
+networkx==2.8.4
+pymongo==4.1.1

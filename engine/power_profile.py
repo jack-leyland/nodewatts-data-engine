@@ -1,6 +1,5 @@
 import statistics
 from bisect import bisect_left
-from xmlrpc.client import Boolean
 
 class PowerSample:
     def __init__(self, sample_raw: dict):
@@ -20,8 +19,12 @@ class PowerProfile:
         self._blank_dev_timeline = None
 
         self._build_timelines(power_raw)
+        # if not self._assert_chronological(self.cgroup_timeline):
+        #     print("Power samples are not chronological")
+            #write sorting function as backup
+
         # error handling if any of the series arent chronological
-        #self._compute_deltas(self.cgroup_timeline)
+        # self._compute_deltas(self.cgroup_timeline)
 
     def _build_timelines(self, power_raw: dict) -> None:
         cgroup = []
@@ -45,8 +48,8 @@ class PowerProfile:
     #exists for accuracy testing and profile statistics
     def _compute_deltas(self, series: list) -> None:
         prev = series[0].timestamp
-        deltas = [0]
-        for i,v in enumerate(series, 1):
+        deltas = []
+        for v in series:
             deltas.append(v.timestamp - prev)
             prev = v.timestamp
         self.cgroup_deltas = deltas
@@ -61,14 +64,29 @@ class PowerProfile:
         return True
 
     #returns the closest sample to the given timestamp, favoring the smaller one in case of a tie
-    def get_nearest(self, ts: int) -> int:
-        pos = bisect_left(self.cgroup_timeline, ts)
+    def get_nearest(self, ts: int) -> PowerSample:
+        pos = bisect_left(self.cgroup_timeline, ts, key=lambda x: x.timestamp)
         if pos == 0:
             return self.cgroup_timeline[0]
         if pos == len(self.cgroup_timeline):
             return self.cgroup_timeline[-1]
         before = self.cgroup_timeline[pos - 1]
         after = self.cgroup_timeline[pos]
+        if after.timestamp - ts < ts - before.timestamp:
+            return after
+        else:
+            return before
+
+        #returns the closest sample to the given timestamp, favoring the smaller one in case of a tie
+    def get_nearest_DEV(self, ts: int) -> PowerSample:
+        #Need python 3.10 for this to work
+        pos = bisect_left(self._blank_dev_timeline, ts, key=lambda x: x.timestamp)
+        if pos == 0:
+            return self._blank_dev_timeline[0]
+        if pos == len(self._blank_dev_timeline):
+            return self._blank_dev_timeline[-1]
+        before = self._blank_dev_timeline[pos - 1]
+        after = self._blank_dev_timeline[pos]
         if after.timestamp - ts < ts - before.timestamp:
             return after
         else:

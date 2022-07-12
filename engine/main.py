@@ -1,51 +1,60 @@
-from db import Mongo_Connection
+from db import Database
 from cpu_profile import CpuProfile
 from power_profile import PowerProfile
+from report import Report
+import argparse
+import json
+import pprint
 
 # Config file/cli will have to define the name of the database along with address and port
 # This looks ugly but allows for more flexible use?
 # Once config is figured out later could just pull the collection all in one go 
 # right from the db class
 
+class Config:
+    pass
+
+config = Config()
+
+parser = argparse.ArgumentParser(description='internal argument interface for nodewatts')
+parser.add_argument('--internal_db_addr', type=str, default='localhost')
+parser.add_argument('--internal_db_port', type=int, default=27017)
+parser.add_argument('--export_raw', type=bool, default=False, required=False)
+parser.add_argument('--out_db_addr', type=str, default='localhost', required=False)
+parser.add_argument('--out_db_port', type=int, default=27017, required=False)
+parser.add_argument('--profile_id', type=str, required=True)
+parser.add_argument('--report_name', type=str, required=True)
+parser.add_argument('--sensor_start', type=int, required=False)
+parser.add_argument('--sensor_end', type=int, required=False)
+
+parser.parse_args(namespace=config)
+
 try:
-    conn = Mongo_Connection('localhost', 27017)
-    db = conn.fetch_db_object("test")
-    profile_collection = db["profiles"]
-    power_collection = db["outputs"]
+    db = Database(config.internal_db_addr, config.internal_db_port)
 except Exception as e:
-    print("Error fetching data from DB")
+    print("Error establishing DB connection")
     print(e)
 
-# We assume that the objectID is passed to the engine from the profiler
-# ObjID will be used to fetch the correct profile in case there's multiple 
-# Under normal operation there won't be anything cause the tool will
-# delete the entire mongodb when done
-
-# this is just a test one
-prof_raw = profile_collection.find_one({"userProvidedName": "1657135061183"})
-
-cpu = CpuProfile(prof_raw);
-
-# The config needs to provide start and end timestamps for the power profile taken from the program running the sensor
-# These stamps will be used for the preliminary check that the timelines actually overlap sufficently
-
-# This might change once the above comment is implemented, for the time being, we pad the CPU profile start and end times
-# by 2ms to ensure we have enough data to shift so it matches up with the CPU profile
-power_sample_start = cpu.start_time - 2000
-power_sample_end = cpu.end_time + 2000
-
-power_raw = power_collection.find({"timestamp": {"$gt": power_sample_start, "$lt": power_sample_end}}).sort("timestamp", 1)
+#Need this try/catch?
+try:
+    prof_raw = db.get_cpu_prof_by_id(config.profile_id)
+    # this is just a test one, use config values and fallback to this if needed
+    cpu = CpuProfile(prof_raw)
+    power_sample_start = cpu.start_time - 2000
+    power_sample_end = cpu.end_time + 2000
+    power_raw = db.get_power_samples_by_range(power_sample_start, power_sample_end)
+except Exception as e:
+    print("Error fetching input data")
+    print(e)
 
 power = PowerProfile(power_raw)
-if power._assert_chronological(power._rapl_timeline): print("Sorting works")
+report = Report(config.report_name,cpu, power)
 
-#calculate time deltas and compare
-
-
-
-# May need to check memory use if we are reading everything into memory, should be fine though
-
-
+try:
+    db.save_report(vars(report.__dict__))
+except Exception as e:
+    print("Error saving")
+    print(e)
 
 
 
