@@ -59,7 +59,6 @@ class Report:
 
         self._build_reports(cpu, power)
 
-
     def _assign_to_category(self, path: str, idx: int):
         split = PathParser.split_path(path)
         if PathParser.is_node_prefixed(split[0]):
