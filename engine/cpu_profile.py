@@ -1,5 +1,6 @@
 import statistics as stat
 import networkx as nx
+import logging
 
 # Sample array from profiler includes only the node id integer. This class expands it to include additional timing data.
 # node_idx provides an index into the nodes list within the profile class. 
@@ -29,17 +30,22 @@ class CpuProfile:
         self.sample_timeline = []
         self.start_time = prof_raw["startTime"]
         self.end_time = prof_raw["endTime"]
-        self.runtime_from_timestamps = prof_raw["endTime"] - prof_raw["startTime"]
-        self.runtime_from_deltas = None
+        self.runtime = prof_raw["endTime"] - prof_raw["startTime"]
         self.compressed_timeline = None
         self.node_map  = None
         self.node_dir_graph = None
         
+        #Excludes very large first delta from when profiler initializes
+        self.delta_stats = {
+            "avg": stat.mean(prof_raw["timeDeltas"]),
+            "max": max(prof_raw["timeDeltas"]), #excludes first one which is always 
+            "min": min(prof_raw["timeDeltas"]),
+            }
         
         self._generate_timeline(prof_raw)
-        self._validate_runtime_difference()
         self._build_maps(prof_raw)
         self._build_directed_node_graph()
+        logging.debug("CPU profile processed.")
 
 
     def _generate_timeline(self, raw: dict) -> None:
@@ -53,17 +59,9 @@ class CpuProfile:
                 Sample(s, raw["timeDeltas"][i], int(cum_ts), elapsed_time)
         )
 
-        self.runtime_from_deltas = elapsed_time;
-    
-    # Remains to be seen if this matters at all but putting it here for awareness
-    def _validate_runtime_difference(self) -> None:
-        if abs(self.runtime_from_deltas - self.runtime_from_timestamps) > 1000:
-            print("Profile calculated runtime differs by more than 1ms.")
+        self.runtime_from_deltas = elapsed_time
 
     # Puts profile nodes into a dictionary indexed by profilerId.
-    # A call frame dict is also built alongside the node_map.
-    # Neither function name (sometimes blank, no guarantee of uniquenes across files)
-    # , url (sometimes blank)
     def _build_maps(self, raw: dict) -> None:
         node_map = {}
 
