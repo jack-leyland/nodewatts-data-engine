@@ -1,5 +1,3 @@
-from xmlrpc import client
-from report import Report
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import logging

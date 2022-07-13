@@ -1,5 +1,5 @@
-from cpu_profile import CpuProfile, ProfileNode, Sample
-from power_profile import PowerProfile, PowerSample
+from nwengine.cpu_profile import CpuProfile, Sample
+from nwengine.power_profile import PowerProfile, PowerSample
 from networkx.readwrite import json_graph
 from datetime import datetime
 import statistics as stat
