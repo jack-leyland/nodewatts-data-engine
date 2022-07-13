@@ -92,5 +92,5 @@ class Report:
 
     # Convert entire report to JSON and return for db class to save
     def to_json(self):
-        return json.dumps(self, default=lambda x: x.__dict__)
+        return json.loads(json.dumps(self, default=lambda x: x.__dict__))
     

@@ -3,7 +3,6 @@ from cpu_profile import CpuProfile
 from power_profile import PowerProfile
 from report import Report
 import argparse
-import json
 import pprint
 
 # Config file/cli will have to define the name of the database along with address and port
@@ -48,15 +47,13 @@ except Exception as e:
     print(e)
 
 power = PowerProfile(power_raw)
-report = Report(config.report_name,cpu, power)\
+report = Report(config.report_name,cpu, power)
 
-pprint.pprint(report.categories.__dict__)
-
-# try:
-#     db.save_report(vars(report.__dict__))
-# except Exception as e:
-#     print("Error saving")
-#     print(e)
+try:
+    db.save_report(report.to_json())
+except Exception as e:
+    print("Error saving")
+    print(e)
 
 
 
