@@ -59,16 +59,25 @@ class Report:
 
         self._build_reports(cpu, power)
 
-    def _assign_to_category(self, path: str, idx: int):
+    def _assign_to_category(self, path: str, idx: int) -> None:
+        if path == '':
+            if idx not in self.categories.system:
+                self.categories.system.append(idx)
+            return 
+        
         split = PathParser.split_path(path)
         if PathParser.is_node_prefixed(split[0]):
             if split[0] not in self.categories.node_js.keys():
-                self.categories.node_js[split[0]] = idx
+                self.categories.node_js[split[0]] = [idx] #new array for name 
+            elif idx not in self.categories.node_js[split[0]]:
+                self.categories.node_js[split[0]].append(idx)
         elif PathParser.is_npm_package(path):
             pkg_name = PathParser.get_package_name(path)
             if pkg_name not in self.categories.npm_packages.keys():
-                self.categories.npm_packages[pkg_name] = idx
-        else:
+                self.categories.npm_packages[pkg_name] = [idx]
+            elif idx not in self.categories.npm_packages[pkg_name]:
+                self.categories.npm_packages[pkg_name].append(idx)
+        elif idx not in self.categories.user:
             self.categories.user.append(idx)
     
     # loop through cpu profile and assign power measurements

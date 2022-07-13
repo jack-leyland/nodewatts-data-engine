@@ -48,13 +48,15 @@ except Exception as e:
     print(e)
 
 power = PowerProfile(power_raw)
-report = Report(config.report_name,cpu, power)
+report = Report(config.report_name,cpu, power)\
 
-try:
-    db.save_report(vars(report.__dict__))
-except Exception as e:
-    print("Error saving")
-    print(e)
+pprint.pprint(report.categories.__dict__)
+
+# try:
+#     db.save_report(vars(report.__dict__))
+# except Exception as e:
+#     print("Error saving")
+#     print(e)
 
 
 

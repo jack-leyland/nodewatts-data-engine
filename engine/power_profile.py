@@ -65,6 +65,7 @@ class PowerProfile:
 
     #returns the closest sample to the given timestamp, favoring the smaller one in case of a tie
     def get_nearest(self, ts: int) -> PowerSample:
+        #Need python 3.10 for this to work
         pos = bisect_left(self.cgroup_timeline, ts, key=lambda x: x.timestamp)
         if pos == 0:
             return self.cgroup_timeline[0]
