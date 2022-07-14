@@ -1,6 +1,7 @@
 import statistics as stat
 from bisect import bisect_left
 import logging
+from nwengine.error import EngineError
 
 class PowerSample:
     def __init__(self, sample_raw: dict):
@@ -35,7 +36,7 @@ class PowerProfile:
                 global_s.append(PowerSample(item))
 
         if not cgroup:
-            raise ValueError("Power profile contains no data on Node PID.")
+            raise EngineError("Power profile contains no data on Node PID.")
 
         self.cgroup_timeline = cgroup
         self._global_timeline = global_s

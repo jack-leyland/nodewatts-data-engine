@@ -1,17 +1,14 @@
 from nwengine.db import Database
 from nwengine.cpu_profile import CpuProfile
+from nwengine.error import EngineError
 from nwengine.power_profile import PowerProfile
 from nwengine.report import Report
+from nwengine.config import Config
 import argparse
 import logging
 import sys
 
-if __name__ == "__main__":
-    class Config:
-        pass
-
-    config = Config()
-
+def create_cli_parser():
     parser = argparse.ArgumentParser(description='internal argument interface for nodewatts')
     parser.add_argument('--internal_db_addr', type=str, default='localhost')
     parser.add_argument('--internal_db_port', type=int, default=27017)
@@ -21,38 +18,26 @@ if __name__ == "__main__":
     parser.add_argument('--out_db_name', type=str, default="nodewatts", required=False)
     parser.add_argument('--profile_id', type=str, required=True)
     parser.add_argument('--report_name', type=str, required=True)
-    parser.add_argument('--sensor_start', type=int, required=False)
-    parser.add_argument('--sensor_end', type=int, required=False)
-    parser.add_argument('--verbose', type=bool, required=True)
+    parser.add_argument('--sensor_start', type=int, required=True)
+    parser.add_argument('--sensor_end', type=int, required=True)
+    parser.add_argument('--verbose', type=bool, required=False, default=False)
+    return parser
 
-    parser.parse_args(namespace=config)
+def run_engine(args: Config or dict) -> None:
+    if not isinstance(args, Config):
+        config = Config(args)
 
-    logging.info("Nodewatts data processor started.")
-
+    FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s :Engine: %(message)s'
     if config.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format=FORMAT)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format=FORMAT)
 
-    # Defined error codes for the parent process?
-    # MAYBE: add report format validator before saving 
-
-    try:
-        db = Database(config.internal_db_addr, config.internal_db_port)
-    except Exception as e:
-        logging.error("Failed to connect to internal database at %s, port %i", \
-            config.internal_db_addr, config.internal_db_port, exec_info=True)
-        sys.exit(-1)
-
+    db = Database(config.internal_db_addr, config.internal_db_port)
     if config.export_raw:
-        try:
-            db.connect_to_export_db(config.out_db_addr, config.out_db_port, config.out_db_name)
-        except Exception as e:
-            logging.error("Failed to connect to export database at %s, port %i", \
-            config.out_db_addr, config.out_db_port, exec_info=True)
-        sys.exit(-1)
+        db.connect_to_export_db(config.out_db_addr, config.out_db_port, config.out_db_name)
 
-    # Calling programe will ensure that these collections are not empty before startign engine
+    # Calling program will ensure that these collections are not empty before starting engine
     prof_raw = db.get_cpu_prof_by_id(config.profile_id)
     cpu = CpuProfile(prof_raw)
 
@@ -65,32 +50,24 @@ if __name__ == "__main__":
         power_sample_end = cpu.end_time + 2000
 
     if power_sample_start > cpu.start_time or power_sample_end < cpu.end_time:
-        logging.error("Insufficient sensor data to compute power report.")
-        sys.exit(-1)
+        raise EngineError("Insufficient sensor data to compute power report.")
 
     power_raw = db.get_power_samples_by_range(power_sample_start, power_sample_end)
-
-    try:
-        power = PowerProfile(power_raw)
-    except ValueError as e:
-        logging.error(e)
-        sys.exit(-1)
-
+    power = PowerProfile(power_raw)
     report = Report(config.report_name, cpu, power)
     formatted = report.to_json()
-
-    try:
-        db.save_report(formatted)
-    except Exception as e:
-        logging.error("Failed to save report to internal database.")
-        sys.exit(-1)
+    db.save_report_to_internal(formatted)
 
     if config.export_raw:
-        try :
-            db.export_report(formatted)
-        except Exception as e:
-            logging.warn("Failed to export raw data report.")
-            sys.exit(-2)
+        db.export_report(formatted)
 
     logging.info("Data processing complete.")
+
+
+
+if __name__ == "__main__":
+    config = Config()
+    parser = create_cli_parser()
+    parser.parse_args(namespace=config)
+    run_engine(config)
     sys.exit(0)
