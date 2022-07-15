@@ -5,6 +5,7 @@ from datetime import datetime
 import statistics as stat
 import json
 import logging
+logger = logging.getLogger("Engine")
 
 class ProfileTick:
     def __init__(self, cpu_sample_info: Sample, power_sample: PowerSample):
@@ -46,7 +47,7 @@ class PathParser:
 
 class Report:
     def __init__(self, name,  cpu: CpuProfile, power: PowerProfile):
-        logging.debug("Beginning report processing.")
+        logger.debug("Beginning report processing.")
         self.name = name
         self.engine_datetime = datetime.now().isoformat()
         self.node_map = cpu.node_map
@@ -59,7 +60,7 @@ class Report:
         }
 
         self._build_reports(cpu, power)
-        logging.debug("Report built.")
+        logger.debug("Report built.")
 
 
     def _assign_to_category(self, path: str, idx: int) -> None:

@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import logging
 from nwengine.error import EngineError
+logger = logging.getLogger("Engine")
 
 class DatabaseError(EngineError):
     def __init__(self, msg, *args, **kwargs):
@@ -18,7 +19,7 @@ class Database:
         except Exception as e:
             raise Database("Failed to connect to internal database")
         finally:
-            logging.debug("Connection established to internal DB at %s, port %i", addr, port)
+            logger.debug("Connection established to internal DB at %s, port %i", addr, port)
 
         
     #internal db name is not intended to be configurable 
@@ -56,5 +57,5 @@ class Database:
         except Exception as e:
             raise Database("Failed to connect to internal database")
         finally:     
-            logging.debug("Connection established to export DB at %s, port %i", addr, port)
+            logger.debug("Connection established to export DB at %s, port %i", addr, port)
         self.export_db_name = name

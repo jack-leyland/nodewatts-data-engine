@@ -1,6 +1,7 @@
 import statistics as stat
 import networkx as nx
 import logging
+logger = logging.getLogger("Engine")
 
 # Sample array from profiler includes only the node id integer. This class expands it to include additional timing data.
 # node_idx provides an index into the nodes list within the profile class. 
@@ -45,7 +46,7 @@ class CpuProfile:
         self._generate_timeline(prof_raw)
         self._build_maps(prof_raw)
         self._build_directed_node_graph()
-        logging.debug("CPU profile processed.")
+        logger.debug("CPU profile processed.")
 
 
     def _generate_timeline(self, raw: dict) -> None:

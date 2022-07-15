@@ -1,7 +1,8 @@
 import statistics as stat
 from bisect import bisect_left
-import logging
 from nwengine.error import EngineError
+import logging
+logger = logging.getLogger("Engine")
 
 class PowerSample:
     def __init__(self, sample_raw: dict):
@@ -21,7 +22,7 @@ class PowerProfile:
 
         self._build_timelines(power_raw)
         self._compute_deltas(self.cgroup_timeline)
-        logging.debug("Power profile processed.")
+        logger.debug("Power profile processed.")
 
     def _build_timelines(self, power_raw: dict) -> None:
         cgroup = []

@@ -4,8 +4,8 @@ from nwengine.error import EngineError
 from nwengine.power_profile import PowerProfile
 from nwengine.report import Report
 from nwengine.config import Config
+import nwengine.log as log
 import argparse
-import logging
 import sys
 
 def create_cli_parser():
@@ -27,11 +27,7 @@ def run_engine(args: Config or dict) -> None:
     if not isinstance(args, Config):
         config = Config(args)
 
-    FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s :Engine: %(message)s'
-    if config.verbose:
-        logging.basicConfig(level=logging.DEBUG, format=FORMAT)
-    else:
-        logging.basicConfig(level=logging.INFO, format=FORMAT)
+    logger = log.setup_logger(config.verbose, "Engine")
 
     db = Database(config.internal_db_addr, config.internal_db_port)
     if config.export_raw:
@@ -61,7 +57,7 @@ def run_engine(args: Config or dict) -> None:
     if config.export_raw:
         db.export_report(formatted)
 
-    logging.info("Data processing complete.")
+    logger.info("Data processing complete.")
 
 
 
