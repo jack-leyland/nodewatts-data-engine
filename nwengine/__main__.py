@@ -1,11 +1,11 @@
-from nwengine import __version__ as nwengine_version
-from nwengine.db import Database
-from nwengine.cpu_profile import CpuProfile
-from nwengine.error import EngineError
-from nwengine.power_profile import PowerProfile
-from nwengine.report import Report
-from nwengine.config import Config
-import nwengine.log as log
+from . import __version__ as nwengine_version
+from .db import Database
+from .cpu_profile import CpuProfile
+from .error import EngineError
+from .power_profile import PowerProfile
+from .report import Report
+from .config import Config
+from . import log
 import argparse
 import sys
 

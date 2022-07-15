@@ -1,6 +1,6 @@
 import statistics as stat
 from bisect import bisect_left
-from nwengine.error import EngineError
+from .error import EngineError
 import logging
 logger = logging.getLogger("Engine")
 

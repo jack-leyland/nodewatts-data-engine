@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import logging
-from nwengine.error import EngineError
+from .error import EngineError
 logger = logging.getLogger("Engine")
 
 class DatabaseError(EngineError):
@@ -16,7 +16,7 @@ class Database:
         try:
             self.internal_client = MongoClient(addr, port)
         except Exception as e:
-            raise Database("Failed to connect to internal database")
+            raise Database("Failed to connect to internal database") from None
         finally:
             logger.debug("Connection established to internal DB at %s, port %i", addr, port)
 
@@ -27,7 +27,7 @@ class Database:
         try: 
             res = self.internal_client["nodewatts"]["cpu"].find_one({"_id": objId})
         except Exception as e:
-            raise DatabaseError("Failed to fetch cpuprofile")
+            raise DatabaseError("Failed to fetch cpuprofile") from None
         return res
 
     def get_power_samples_by_range(self, start: int, end:int ) -> dict:
@@ -35,26 +35,26 @@ class Database:
             res = self.internal_client["nodewatts"]["power"].find({"timestamp": \
                 {"$gt": start, "$lt": end}}).sort("timestamp", 1)
         except Exception as e:
-            raise DatabaseError("Failed to fetch smartwatts data")
+            raise DatabaseError("Failed to fetch smartwatts data") from None
         return res
     
     def save_report_to_internal(self, report: dict) -> None:
         try:
             self.internal_client["nodewatts"]["reports"].insert_one(report)
         except Exception as e:
-            raise DatabaseError("Failed to save report - internal")
+            raise DatabaseError("Failed to save report - internal") from None
 
     def export_report(self, report: dict, ) -> None:
         try:
             self.internal_client[self.export_db_name]["exports"].insert_one(report)
         except Exception as e:
-            raise DatabaseError("Failed to export report")
+            raise DatabaseError("Failed to export report") from None
 
     def connect_to_export_db(self, addr: str, port: int, name='nodewatts') -> None:
         try:   
             self.export_client = MongoClient(addr, port)
         except Exception as e:
-            raise Database("Failed to connect to internal database")
+            raise Database("Failed to connect to internal database") from None
         finally:     
             logger.debug("Connection established to export DB at %s, port %i", addr, port)
         self.export_db_name = name
