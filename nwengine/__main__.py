@@ -1,3 +1,4 @@
+from nwengine import __version__ as nwengine_version
 from nwengine.db import Database
 from nwengine.cpu_profile import CpuProfile
 from nwengine.error import EngineError

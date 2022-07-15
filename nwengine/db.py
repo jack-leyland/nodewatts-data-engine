@@ -11,7 +11,6 @@ class DatabaseError(EngineError):
 
 class Database:
     def __init__(self, addr='localhost', port=27017):
-        #establish connection on construction
         self.internal_addr = addr
         self.internal_port = port
         try:
