@@ -1,36 +1,26 @@
 from .error import EngineError
 
+
 class InvalidConfig(EngineError):
     def __init__(self, msg, *args, **kwargs):
         super().__init__(msg, *args, **kwargs)
 
+
 class Config:
-    def __init__(self, params: dict=None):
+    def __init__(self, params: dict = None):
         if params:
-            if not params["internal_db_addr"]:
-                self.internal_db_addr = "localhost"
+            if not params["internal_db_uri"]:
+                self.internal_db_addr = "mongodb://localhost:27017"
             else:
                 self.internal_db_addr = params["internal_db_addr"]
-            if not params["internal_db_port"]:
-                self.internal_db_port = 27017
-            else:
-                if not isinstance(params["internal_db_port"], int):
-                    raise InvalidConfig("internal_db_port expected int")
-                self.internal_db_port = params["internal_db_addr"]
             if not params["export_raw"]:
                 self.export_raw = False
             else:
                 self.export_raw = True
-            if not params["out_db_addr"]:
+            if not params["out_db_uri"]:
                 self.out_db_addr = self.internal_db_addr
-            else: 
-                self.out_db_addr = params["out_db_addr"]
-            if not params["out_db_port"]:
-                self.out_db_port = self.internal_db_port
             else:
-                if not isinstance(params["out_db_port"], int):
-                    raise InvalidConfig("out_db_port expected int")
-                self.out_db_port = params["out_db_addr"]
+                self.out_db_addr = params["out_db_addr"]
             if not params["out_db_name"]:
                 self.out_db_name = "nodewatts"
             else:
@@ -55,4 +45,3 @@ class Config:
                 self.verbose = False
             else:
                 self.verbose = params["verbose"]
-            
