@@ -12,7 +12,7 @@ class Config:
             if not params["internal_db_uri"]:
                 self.internal_db_addr = "mongodb://localhost:27017"
             else:
-                self.internal_db_addr = params["internal_db_addr"]
+                self.internal_db_addr = params["internal_db_uri"]
             if not params["export_raw"]:
                 self.export_raw = False
             else:
@@ -20,7 +20,7 @@ class Config:
             if not params["out_db_uri"]:
                 self.out_db_addr = self.internal_db_addr
             else:
-                self.out_db_addr = params["out_db_addr"]
+                self.out_db_addr = params["out_db_uri"]
             if not params["out_db_name"]:
                 self.out_db_name = "nodewatts"
             else:
