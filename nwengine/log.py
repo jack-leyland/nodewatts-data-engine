@@ -23,13 +23,13 @@ class ColoredFormatter(logging.Formatter):
 
 def setup_logger(verbose, name):
     logger = logging.getLogger(name)
+    ch = logging.StreamHandler()
     if verbose:
         logger.setLevel(logging.DEBUG)
         ch.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
         ch.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
     formatter = logging.Formatter(
         ColoredFormatter()
         )
