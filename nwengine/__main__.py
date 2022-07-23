@@ -30,10 +30,14 @@ def create_cli_parser():
 
 
 def run_engine(args: Config or dict) -> None:
-    if not isinstance(args, Config):
-        config = Config(args)
-
     logger = log.setup_logger(config.verbose, "Engine")
+
+    if not isinstance(args, Config):
+        try : 
+            config = Config(args)
+        except InvalidConfig as e:
+            logger.error("Invalid configuration : "+ str(e))
+            raise EngineError(None) from None
 
     db = EngineDB(config.internal_db_addr)
     try:
@@ -41,12 +45,14 @@ def run_engine(args: Config or dict) -> None:
         if config.export_raw:
             db.connect_to_export_db(config.out_db_uri, config.out_db_name)
     except DatabaseError as e:
-        raise EngineError(str(e)) from e
+        logger.error("Database error: " + str(e))
+        raise EngineError(None) from None
     
     prof_raw = db.get_cpu_prof_by_id(config.profile_id)
     
     if prof_raw is None:
-        raise EngineError("Could not locate cpu profile data.")
+        logger.error("Could not locate cpu profile data.")
+        raise EngineError(None)
     
     cpu = CpuProfile(prof_raw)
 
@@ -54,7 +60,8 @@ def run_engine(args: Config or dict) -> None:
     power_sample_end = config.sensor_end + 2000
 
     if config.sensor_start > cpu.start_time or config.sensor_end < cpu.end_time:
-        raise EngineError("Insufficient sensor data to compute power report.")
+        logger.error("Insufficient sensor data to compute power report.")
+        raise EngineError(None)
     
     # Slightly pad coundaraies for correlation purposes
     power_sample_start = config.sensor_start - 2000
@@ -64,7 +71,8 @@ def run_engine(args: Config or dict) -> None:
         power_sample_start, power_sample_end)
 
     if power_raw is None:
-        raise EngineError("Could not locate power sensor data.")
+        logger.error("Could not locate power sensor data.")
+        raise EngineError(None)
 
     power = PowerProfile(power_raw)
     report = Report(config.report_name, cpu, power)
