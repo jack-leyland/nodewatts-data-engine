@@ -1,10 +1,10 @@
 from . import __version__ as nwengine_version
-from .db import Database
+from .db import Database, DatabaseError, EngineDB
 from .cpu_profile import CpuProfile
 from .error import EngineError
 from .power_profile import PowerProfile
 from .report import Report
-from .config import Config
+from .config import Config, InvalidConfig
 from . import log
 import argparse
 import sys
@@ -35,26 +35,30 @@ def run_engine(args: Config or dict) -> None:
 
     logger = log.setup_logger(config.verbose, "Engine")
 
-    db = Database(config.internal_db_addr, config.internal_db_port)
-    if config.export_raw:
-        db.connect_to_export_db(
-            config.out_db_addr, config.out_db_port, config.out_db_name)
-
+    db = EngineDB(config.internal_db_addr)
+    try:
+        db.connect()
+        if config.export_raw:
+            db.connect_to_export_db(config.out_db_uri, config.out_db_name)
+    except DatabaseError as e:
+        raise EngineError(str(e)) from e
+    
     # Calling program will ensure that these collections are not empty before starting engine
     prof_raw = db.get_cpu_prof_by_id(config.profile_id)
     cpu = CpuProfile(prof_raw)
 
-    if config.sensor_start and config.sensor_end:
-        power_sample_start = config.sensor_start
-        power_sample_end = config.sensor_end
-    else:
-        # May delete this fallback with further testing, more of a hack for development
-        power_sample_start = cpu.start_time - 2000
-        power_sample_end = cpu.end_time + 2000
 
-    if power_sample_start > cpu.start_time or power_sample_end < cpu.end_time:
+    power_sample_start = config.sensor_start - 2000
+    power_sample_end = config.sensor_end + 2000
+
+
+    if config.sensor_start > cpu.start_time or config.sensor_end < cpu.end_time:
         raise EngineError("Insufficient sensor data to compute power report.")
-
+    
+    # Slightly pad coundaraies for correlation purposes
+    power_sample_start = config.sensor_start - 2000
+    power_sample_end = config.sensor_end + 2000
+    
     power_raw = db.get_power_samples_by_range(
         power_sample_start, power_sample_end)
     power = PowerProfile(power_raw)
@@ -65,6 +69,7 @@ def run_engine(args: Config or dict) -> None:
     if config.export_raw:
         db.export_report(formatted)
 
+    db.close_connections()
     logger.info("Data processing complete.")
 
 
@@ -72,5 +77,9 @@ if __name__ == "__main__":
     config = Config()
     parser = create_cli_parser()
     parser.parse_args(namespace=config)
-    run_engine(config)
+    try: 
+        run_engine(config)
+    except EngineError as e:
+        print(str(e))
+        sys.exit(1)
     sys.exit(0)
