@@ -1,5 +1,5 @@
 from . import __version__ as nwengine_version
-from .db import Database, DatabaseError, EngineDB
+from .db import EngineDB, DatabaseError, EngineDB
 from .cpu_profile import CpuProfile
 from .error import EngineError
 from .power_profile import PowerProfile
