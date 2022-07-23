@@ -56,9 +56,6 @@ def run_engine(args: Config or dict) -> None:
     
     cpu = CpuProfile(prof_raw)
 
-    power_sample_start = config.sensor_start - 2000
-    power_sample_end = config.sensor_end + 2000
-
     if config.sensor_start > cpu.start_time or config.sensor_end < cpu.end_time:
         logger.error("Insufficient sensor data to compute power report.")
         raise EngineError(None)
