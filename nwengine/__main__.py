@@ -43,14 +43,15 @@ def run_engine(args: Config or dict) -> None:
     except DatabaseError as e:
         raise EngineError(str(e)) from e
     
-    # Calling program will ensure that these collections are not empty before starting engine
     prof_raw = db.get_cpu_prof_by_id(config.profile_id)
+    
+    if prof_raw is None:
+        raise EngineError("Could not locate cpu profile data.")
+    
     cpu = CpuProfile(prof_raw)
-
 
     power_sample_start = config.sensor_start - 2000
     power_sample_end = config.sensor_end + 2000
-
 
     if config.sensor_start > cpu.start_time or config.sensor_end < cpu.end_time:
         raise EngineError("Insufficient sensor data to compute power report.")
@@ -61,6 +62,10 @@ def run_engine(args: Config or dict) -> None:
     
     power_raw = db.get_power_samples_by_range(
         power_sample_start, power_sample_end)
+
+    if power_raw is None:
+        raise EngineError("Could not locate power sensor data.")
+
     power = PowerProfile(power_raw)
     report = Report(config.report_name, cpu, power)
     formatted = report.to_json()
